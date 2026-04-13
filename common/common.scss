@@ -1,1 +1,38 @@
-// Theme's SCSS
+/* web:31 – customizing the scroll bar */
+.topic-list {
+  /* make the native scrollbar wider so we have space */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(0,0,0,.2) transparent;
+}
+
+/* WebKit */
+.topic-list::-webkit-scrollbar {
+  width: 14px; /* wider than default */
+}
+.topic-list::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,.2);
+  border-radius: 4px;
+}
+.topic-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* preview pane that will be positioned next to the bar */
+.topic-preview {
+  position: fixed;
+  top: 0;               /* will be updated by JS */
+  right: 0;             /* flush with the viewport edge */
+  width: 200px;
+  max-height: 80vh;
+  padding: 8px;
+  background: var(--primary-medium);
+  color: var(--white);
+  border-radius: 4px 0 0 4px;
+  box-shadow: -2px 0 6px rgba(0,0,0,.2);
+  pointer-events: none; /* let clicks fall through to the list */
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.topic-preview.show { opacity: 1; }
+.topic-preview .topic-title { font-weight: 600; margin-bottom: 4px; }
+.topic-preview .topic-excerpt { font-size: .9rem; line-height: 1.3; }// Theme's SCSS

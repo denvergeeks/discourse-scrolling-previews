@@ -1,38 +1,316 @@
-/* web:31 – customizing the scroll bar */
-.topic-list {
-  /* make the native scrollbar wider so we have space */
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: rgba(0,0,0,.2) transparent;
+html.topic-preview--enabled {
+  --topic-preview-rail-right: 6px;
+  --topic-preview-card-right: 34px;
+
+  --topic-preview-bg: var(--secondary);
+  --topic-preview-text: var(--primary);
+  --topic-preview-muted: var(--primary-medium);
+  --topic-preview-border: var(--primary-low-mid);
+  --topic-preview-stat-bg: var(--primary-very-low);
+  --topic-preview-stat-border: var(--primary-low);
+
+  --topic-preview-rail-bg: var(--primary-low);
+  --topic-preview-thumb-bg: var(--primary-high);
+  --topic-preview-thumb-bg-hover: var(--primary);
+  --topic-preview-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  --topic-preview-thumb-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+
+  --topic-preview-title-lines: 2;
+  --topic-preview-excerpt-lines: 4;
+  --topic-preview-card-height: clamp(168px, 26vh, 240px);
+  --topic-preview-card-max-height: clamp(168px, 32vh, 280px);
+
+  --topic-preview-padding: 12px;
+  --topic-preview-title-size: 0.98rem;
+  --topic-preview-excerpt-size: 0.86rem;
+  --topic-preview-meta-size: 0.9rem;
+  --topic-preview-gap: 8px;
 }
 
-/* WebKit */
-.topic-list::-webkit-scrollbar {
-  width: 14px; /* wider than default */
-}
-.topic-list::-webkit-scrollbar-thumb {
-  background-color: rgba(0,0,0,.2);
-  border-radius: 4px;
-}
-.topic-list::-webkit-scrollbar-track {
-  background: transparent;
+:root {
+  color-scheme: light dark;
 }
 
-/* preview pane that will be positioned next to the bar */
+html[data-topic-preview-density="compact"] {
+  --topic-preview-padding: 10px;
+  --topic-preview-title-size: 0.92rem;
+  --topic-preview-excerpt-size: 0.8rem;
+  --topic-preview-meta-size: 0.84rem;
+  --topic-preview-gap: 6px;
+}
+
+html[data-topic-preview-density="default"] {
+  --topic-preview-padding: 12px;
+  --topic-preview-title-size: 0.98rem;
+  --topic-preview-excerpt-size: 0.86rem;
+  --topic-preview-meta-size: 0.9rem;
+  --topic-preview-gap: 8px;
+}
+
+html[data-topic-preview-density="cozy"] {
+  --topic-preview-padding: 14px;
+  --topic-preview-title-size: 1.03rem;
+  --topic-preview-excerpt-size: 0.92rem;
+  --topic-preview-meta-size: 0.94rem;
+  --topic-preview-gap: 10px;
+}
+
+.topic-fast-scroll {
+  position: fixed;
+  top: 8px;
+  right: var(--topic-preview-rail-right);
+  width: 22px;
+  height: calc(100vh - 16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 9999;
+}
+
+.topic-fast-scroll.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.topic-fast-scroll__track {
+  position: absolute;
+  top: 0;
+  right: 6px;
+  width: 6px;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--topic-preview-rail-bg);
+  opacity: 0.75;
+}
+
+.topic-fast-scroll__thumb {
+  position: absolute;
+  top: 0;
+  right: 2px;
+  width: 14px;
+  min-height: 48px;
+  border-radius: 999px;
+  background: var(--topic-preview-thumb-bg);
+  box-shadow: var(--topic-preview-thumb-shadow);
+  cursor: grab;
+  transition: background 0.12s ease, transform 0.04s linear;
+}
+
+.topic-fast-scroll.dragging .topic-fast-scroll__thumb,
+.topic-fast-scroll__thumb:hover {
+  background: var(--topic-preview-thumb-bg-hover);
+}
+
+body.topic-preview--dragging {
+  cursor: ns-resize;
+  user-select: none;
+}
+
 .topic-preview {
   position: fixed;
-  top: 0;               /* will be updated by JS */
-  right: 0;             /* flush with the viewport edge */
-  width: 200px;
-  max-height: 80vh;
-  padding: 8px;
-  background: var(--primary-medium);
-  color: var(--white);
-  border-radius: 4px 0 0 4px;
-  box-shadow: -2px 0 6px rgba(0,0,0,.2);
-  pointer-events: none; /* let clicks fall through to the list */
+  top: 0;
+  right: var(--topic-preview-card-right);
+  width: 280px;
+  max-width: calc(100vw - 24px);
+  padding: var(--topic-preview-padding);
+  border-radius: 14px;
+  background: var(--topic-preview-bg);
+  color: var(--topic-preview-text);
+  border: 1px solid var(--topic-preview-border);
+  box-shadow: var(--topic-preview-shadow);
+  pointer-events: none;
   opacity: 0;
-  transition: opacity .15s ease;
+  transform: translateX(12px) scale(0.98);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 10000;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--topic-preview-gap);
 }
-.topic-preview.show { opacity: 1; }
-.topic-preview .topic-title { font-weight: 600; margin-bottom: 4px; }
-.topic-preview .topic-excerpt { font-size: .9rem; line-height: 1.3; }// Theme's SCSS
+
+.topic-preview[data-height-mode="fixed"] {
+  height: var(--topic-preview-card-height);
+}
+
+.topic-preview[data-height-mode="max"] {
+  max-height: var(--topic-preview-card-max-height);
+}
+
+.topic-preview.show {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.topic-preview__category {
+  display: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--topic-preview-muted);
+}
+
+.topic-preview.has-category .topic-preview__category {
+  display: block;
+}
+
+.topic-preview__title,
+.topic-preview__excerpt {
+  overflow: hidden;
+}
+
+.topic-preview__title {
+  font-size: var(--topic-preview-title-size);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--topic-preview-text);
+  text-wrap: pretty;
+  margin: 0;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--topic-preview-title-lines);
+  line-clamp: var(--topic-preview-title-lines);
+}
+
+.topic-preview__excerpt {
+  display: none;
+  font-size: var(--topic-preview-excerpt-size);
+  line-height: 1.35;
+  color: var(--topic-preview-muted);
+  margin: 0;
+
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--topic-preview-excerpt-lines);
+  line-clamp: var(--topic-preview-excerpt-lines);
+}
+
+.topic-preview.has-excerpt .topic-preview__excerpt {
+  display: -webkit-box;
+}
+
+.topic-preview__posters {
+  display: none;
+  align-items: center;
+  min-height: 24px;
+}
+
+.topic-preview.has-posters .topic-preview__posters {
+  display: flex;
+}
+
+.topic-preview__avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid var(--topic-preview-bg);
+  margin-right: -7px;
+  background: var(--topic-preview-bg);
+}
+
+.topic-preview__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--topic-preview-gap);
+  margin-top: auto;
+}
+
+.topic-preview__stat {
+  padding: 8px 8px 7px;
+  border-radius: 10px;
+  background: var(--topic-preview-stat-bg);
+  border: 1px solid var(--topic-preview-stat-border);
+  min-width: 0;
+}
+
+.topic-preview__label {
+  display: block;
+  font-size: 0.68rem;
+  line-height: 1;
+  margin-bottom: 4px;
+  color: var(--topic-preview-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.topic-preview__replies,
+.topic-preview__views,
+.topic-preview__activity {
+  display: block;
+  font-size: var(--topic-preview-meta-size);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--topic-preview-text);
+}
+
+.topic-preview-mobile-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.topic-preview-mobile-toggle.is-active {
+  background: var(--tertiary-low, var(--primary-very-low));
+}
+
+.topic-preview-mobile-toggle__label {
+  font-size: 0.9rem;
+}
+
+.topic-preview.reduced-motion,
+.topic-fast-scroll.reduced-motion,
+.topic-preview.reduced-motion *,
+.topic-fast-scroll.reduced-motion * {
+  transition: none !important;
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topic-fast-scroll,
+  .topic-preview,
+  .topic-fast-scroll *,
+  .topic-preview * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .topic-fast-scroll {
+    display: none !important;
+  }
+
+  .topic-preview--mobile {
+    width: min(92vw, 340px);
+    max-width: min(92vw, 340px);
+    right: 12px !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    border-radius: 16px;
+    padding: var(--topic-preview-padding);
+    transform: translateY(8px) scale(0.98);
+    pointer-events: auto;
+  }
+
+  .topic-preview--mobile.show {
+    transform: translateY(0) scale(1);
+  }
+
+  .topic-preview--mobile[data-clickable="true"] {
+    cursor: pointer;
+  }
+}
+
+@media (hover: hover) {
+  .topic-fast-scroll__thumb:hover {
+    background: var(--topic-preview-thumb-bg-hover);
+  }
+
+  .topic-preview--mobile[data-clickable="true"]:hover {
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
+  }
+}
